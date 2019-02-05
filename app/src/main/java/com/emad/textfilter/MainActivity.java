@@ -34,25 +34,41 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<Question> preAskedQuestion; // get its Data from sqlite (Questions asked before && data saved while registration)
     ArrayList<App> allApps;
     private static final String TAG = "MainActivity";
+    boolean isConnected;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        initViews();
+        initLists();
+
+
+        isConnected = checkConnection();
+
+         String question = "what is the time";
+         String test = filterQuestion(question);
+        Log.d(TAG, "onCreate: " + test);
+      //   String answer = getNlpAnswer(filterQuestion(question),allApps,isConnected);
+    //    Log.d(TAG, "onCreate: "  + answer);
+      // new TestParse().execute();
+    }
+
+
+    public void initViews(){
+
         webView = findViewById(R.id.webView);
         imageView= findViewById(R.id.img);
 
-        initLists();
+        webView.getSettings().setJavaScriptEnabled(true);
+        webView.getSettings().setLoadsImagesAutomatically(true);
+        webView.getSettings().setDefaultTextEncodingName("UTF-8");
+        webView.getSettings().setLoadsImagesAutomatically(true);
+    }
+    private boolean checkConnection() {
 
-         webView.getSettings().setJavaScriptEnabled(true);
-         webView.getSettings().setLoadsImagesAutomatically(true);
-         webView.getSettings().setDefaultTextEncodingName("UTF-8");
-         webView.getSettings().setLoadsImagesAutomatically(true);
-
-
-         String question = "who is Trump";
-         String answer = getNlpAnswer(filterQuestion(question),allApps);
-        Log.d(TAG, "onCreate: "  + answer);
-      // new TestParse().execute();
+        // check Connection
+        return true;
     }
 
 
@@ -124,34 +140,62 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public String filterQuestion(String question){
+        String filteredQuestion="";
+        int myFlag =0;
+        // check questions that may don`t need to filter
+
+        String[] myQuestion = question.split(" ");
+        int score=0; // if score == myQuestion.length then choose this question
+        for (int i = 0; i <myQuestion.length ; i++) {
+            for (int x = 0; x < Data.commonQuestions().size(); x++) {
+                String[] myCommon = Data.commonQuestions().get(x).toString().toLowerCase().split(" ");
+                for (int z = 0; z <myCommon.length ; z++) {
+
+                    if (myQuestion[i].toLowerCase().contains(myCommon[z].toLowerCase())){
+                        score++;
+                        if (score== myCommon.length)
+                            filteredQuestion=Data.commonQuestions().get(x).toString().toLowerCase();
+                        myFlag=1;
+                    }
+                }
+            }
+        }
+
+
+        if (question.startsWith("who is")||question.startsWith("what is")) {
+            filteredQuestion = question;
+
+        }else {
 
         StringTokenizer tokenizer = new StringTokenizer(question);
         ArrayList<String> words = new ArrayList();
-        String filteredQuestion="";
+        ArrayList<String> filteredWords = new ArrayList();
 
         while (tokenizer.hasMoreElements()){
             words.add(tokenizer.nextToken().toLowerCase());
-            Log.d(TAG, "filterQuestion: " + tokenizer.nextToken());
         }
+
 
         for (int x = 0; x < words.size(); x++) {
             int flag=0;
             for (int y = 0; y < Data.stopWordsList().size(); y++) {
                 if (words.get(x).toString().equals(Data.stopWordsList().get(y).toString().toLowerCase())){
-                 words.remove(x);
                  flag=1;
                 }
-                if (flag==1)
-                    break;
             }
+                if (flag==0){
+                    filteredWords.add(words.get(x));
+                    break;
+                }
         }
-        for (int x = 0; x <words.size() ; x++) {
-            filteredQuestion+=words.get(x).toLowerCase();
+        for (int x = 0; x <filteredWords.size() ; x++) {
+            filteredQuestion+=filteredWords.get(x).toLowerCase()+" ";
+        }
         }
         return filteredQuestion;
     }
 
-    public String getNlpAnswer(String filterdQuestion,ArrayList<App> allApplicationNames){
+    public String getNlpAnswer(String filterdQuestion,ArrayList<App> allApplicationNames,boolean isConnected){
         String answer = "";
         int flag=0; //when it becomes 1 , we got answer
 
@@ -200,13 +244,21 @@ public class MainActivity extends AppCompatActivity {
                     // intent to open app object (you can get package name from app object) line 190
 
                 }else if ((filterdQuestion.startsWith("search"))||(filterdQuestion.startsWith("find"))||(filterdQuestion.startsWith("show"))||(filterdQuestion.startsWith("what is"))){
+                   if (isConnected){
+
                     String query = "https://www.google.com/search?q"+filterdQuestion;
                     answer = "Okay, we are working";
                     // intent to open browser and search query is the above variable
+                   }else {
+                       answer = "We can not connet to the internet";
+                   }
 
                 }else {
                     // then get Data from Google
-                    answer = getDataFromInternet(filterdQuestion);
+                    if (isConnected)
+                     answer = getDataFromInternet(filterdQuestion);
+                    else
+                        answer = "We can not connet to the internet";
                 }
 
                 return answer;

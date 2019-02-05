@@ -255,10 +255,17 @@ public class MainActivity extends AppCompatActivity {
 
                 }else {
                     // then get Data from Google
-                    if (isConnected)
-                     answer = getDataFromInternet(filterdQuestion);
-                    else
+                    if (isConnected) {
+                        //answer = getDataFromInternet(filterdQuestion);
+                        String dataOnline = " data from online ";
+                        answer = "<html> <body> "+dataOnline +"</body></html>";
+
+                        // in this case if answer starts with <html>
+                        // then you should setVisibility to webView true
+
+                    }else{
                         answer = "We can not connet to the internet";
+                }
                 }
 
                 return answer;
